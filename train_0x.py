@@ -265,9 +265,6 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 p.requires_grad = True
             for p in A.parameters():  
                 p.requires_grad = True
-            if cd_iter:
-                for p in CD.parameters():  
-                    p.requires_grad = False
 
             ###############################################
             # Train Encoder - Generator 
@@ -309,9 +306,6 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 p.requires_grad = False
             for p in A.parameters():  
                 p.requires_grad = False
-            if cd_iter:
-                for p in CD.parameters():  
-                    p.requires_grad =  False
 
             for iters in range(d_iter):
                 d_optimizer.zero_grad()
@@ -324,13 +318,6 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 x_hat = normz(G(z_hat))
                 x_loss2D=0.0
                 gradient_penalty_r=0.0
-                if cd_iter:
-                    z_rand = (Variable(torch.randn((_batch_size,latent_dim)), requires_grad=False).type(torch.cuda.FloatTensor)).cuda(device, non_blocking=True)
-                    z_randc = z_rand.clone()
-                    z_hatc = z_hat.clone()
-                    x_rand = normz(G(z_rand))
-                    x_loss2D = D(x_rand).mean()
-                    gradient_penalty_r = calc_gradient_penalty(D,real_images.data, x_rand.data)
 
                 x_loss2 = -D(labels).mean()+D(x_hat).mean()+x_loss2D
                 gradient_penalty_h = calc_gradient_penalty(D,labels.data, x_hat.data)
@@ -350,21 +337,6 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 p.requires_grad = False
             for p in A.parameters():  
                 p.requires_grad = False
-            if cd_iter:
-                for p in CD.parameters():  
-                    p.requires_grad = True
-
-            loss3 = torch.tensor([[0.0]])
-            for iters in range(cd_iter):
-                cd_optimizer.zero_grad()
-                z_rand = (Variable(torch.randn((_batch_size,latent_dim)), requires_grad=False).type(torch.cuda.FloatTensor)).cuda(device, non_blocking=True)
-                gradient_penalty_cd = calc_gradient_penalty(CD,z_hatc.data, z_randc.data)
-                c_loss = -CD(z_hatc).mean()
-                loss3 = -CD(z_randc).mean() - c_loss + gradient_penalty_cd
-
-                loss3.backward()    #(retain_graph=True)
-                cd_optimizer.step()
-                # print('code-disc, nah\n')
 
 
             
@@ -376,18 +348,16 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 torch.save(D.state_dict(),f'{checkpoint_dir}/D_iter'+str(iteration+1)+'es.pth')
                 torch.save(E.state_dict(),f'{checkpoint_dir}/E_iter'+str(iteration+1)+'es.pth')
                 # torch.save(A.state_dict(),f'{checkpoint_dir}/A_iter'+str(iteration+1)+'es.pth')
-                if cd_iter:
-                    torch.save(CD.state_dict(),f'{checkpoint_dir}/CD_iter'+str(iteration+1)+'es.pth')
-
+                
 
             ###############################################
             # Visualization
             ###############################################
             state = open(logfile, 'a')
             if iteration % 10 != 0:
-                state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t D: {loss2.item():<8.3} \t En_Ge: {loss1.item():<8.3} \t Code: {loss3.item():<8.3}\n')
+                state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t D: {loss2.item():<8.3} \t En_Ge: {loss1.item():<8.3} \n')
             else:
-                state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t D: {loss2.item():<8.3} \t En_Ge: {loss1.item():<8.3} \t Code: {loss3.item():<8.3} \t ssim (gen: {ssim_eval(x_hat,labels):<8.5}) \t mmd (gen: {mmd_eval(x_hat,labels)}) \n')  # \t val(ssim: {ssim_val}, mmd: {mmd_val})\n')  # , random: {ssim_eval(x_rand, labels):<8.5}    , random: {mmd_eval(x_rand, labels)}
+                state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t D: {loss2.item():<8.3} \t En_Ge: {loss1.item():<8.3} \t ssim (gen: {ssim_eval(x_hat,labels):<8.5}) \t mmd (gen: {mmd_eval(x_hat,labels)}) \n')  # \t val(ssim: {ssim_val}, mmd: {mmd_val})\n')  # , random: {ssim_eval(x_rand, labels):<8.5}    , random: {mmd_eval(x_rand, labels)}
             state.close()
 
             if iteration % 500 == 0:
@@ -432,24 +402,6 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
                 axs[1, 0].set_title(indxs[0])
                 axs[1, 2].set_title(indxs[2])
 
-                # PLot the third image
-                if cd_iter:
-                    feat = np.squeeze((0.5*x_rand[0]+0.5).data.cpu().numpy())
-                    feat = nib.Nifti1Image(feat,affine = np.eye(4))
-                    # axs[2].imshow(feat.get_fdata(), cmap='gray')
-                    axs[2,0].get_xaxis().set_visible(False)
-                    axs[2,0].get_yaxis().set_visible(False)
-                    axs[2,1].get_xaxis().set_visible(False)
-                    axs[2,1].get_yaxis().set_visible(False)
-                    axs[2,2].get_xaxis().set_visible(False)
-                    axs[2,2].get_yaxis().set_visible(False)
-                    axs[2, 0].imshow(rotate(feat.get_fdata()[indxs[0],:,:], angle), cmap='gray')
-                    axs[2, 1].imshow(rotate(feat.get_fdata()[:,indxs[1],:], angle), cmap='gray')
-                    axs[2, 2].imshow(rotate(feat.get_fdata()[:,:,indxs[2]], angle), cmap='gray')
-                    axs[2, 1].set_title(f"X_Rand {indxs[1]}")
-                    axs[2, 0].set_title(indxs[0])
-                    axs[2, 2].set_title(indxs[2])
-
                 # Save the figure with both images
                 plt.savefig(f'{checkpoint_dir}/iter{iteration}.png')
                 plt.close()
@@ -460,7 +412,7 @@ def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
 ######################
 ##### PARAMETERS #####
 ######################
-exp_no = 39 # please dont use <20 here
+exp_no = 39 
 load_exp = 38
 # load_exp = 28
 noise_prob = 0.0
@@ -485,56 +437,46 @@ elr = 1e-4
 cdlr = 1e-4
 g_iter = 2
 d_iter = 1
-cd_iter = 0
 pretrained = False
 load_pretrained = True
 cheqpiter = 4000 if load_pretrained else None  # please define this as required
 
 
-def load_models(load_exp, cheqpiter, CD_iter):
+def load_models(load_exp, cheqpiter):
     G.load_state_dict(torch.load(f'./checkpoint{load_exp}/G_iter{cheqpiter}es.pth'))
     D.load_state_dict(torch.load(f'./checkpoint{load_exp}/D_iter{cheqpiter}es.pth'))
     E.load_state_dict(torch.load(f'./checkpoint{load_exp}/E_iter{cheqpiter}es.pth'))
     # A.load_state_dict(torch.load(f'./checkpoint{load_exp}/A_iter{cheqpiter}es.pth'))
     # if load_exp==exp_no:
     #     A.load_state_dict(torch.load(f'./checkpoint{load_exp}/A_iter{cheqpiter}es.pth'))
-    if CD_iter:
-        CD.load_state_dict(torch.load(f'./checkpoint{load_exp}/CD_iter{cheqpiter}es.pth'))
-
+    
 
 G = Generator(noise = latent_dim)
-# D = Discriminator(is_dis=True)
 D = PatchGANdiscriminator()
 E = Discriminator(out_class = latent_dim,is_dis=False)
 A = MultiHeadAttention(heads=num_heads)
 # A = AttentionM(heads=num_heads)
 # E = Encoder()
-if cd_iter:
-    CD = Code_Discriminator(code_size = latent_dim ,num_units = 4096)
 
 if load_pretrained:
-    load_models(load_exp, cheqpiter, cd_iter)
+    load_models(load_exp, cheqpiter)
 
 G.to(device)
 D.to(device)
 E.to(device)
 A.to(device)
-if cd_iter:
-    CD.to(device)
 
 g_optimizer = optim.Adam(G.parameters(), glr)
 d_optimizer = optim.Adam(D.parameters(), dlr)
 e_optimizer = optim.Adam(E.parameters(), elr)
 a_optimizer = optim.Adam(A.parameters(), elr)
-if cd_iter:
-    cd_optimizer = optim.Adam(CD.parameters(), cdlr)
 
 criterion_bce = nn.BCELoss()
 criterion_l1 = nn.L1Loss()
 criterion_mse = nn.MSELoss()
 
     
-Train_files = pd.read_csv('/home/guest1/3dmri/3dbraingen/train_ADNI.csv', header=None)
+Train_files = pd.read_csv('/home/guest1/data/3drepr/train_ADNI.csv', header=None)
 trainset = BrainDataset(Train_files)
 train_loader = DataLoader(trainset, BATCH_SIZE, shuffle=True)
 gen_load = inf_train_gen(train_loader)

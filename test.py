@@ -257,15 +257,12 @@ def test(exp_no:int, pretrained:bool, TOTAL_ITER:int=200000, viz=True):
         E.eval()
         G.eval()
         D.eval()
-        CD.eval()
-        A.eval()
+        # A.eval()
 
         ssim_avgs = 0.0
         
         for iteration in tkdm:
             for p in D.parameters():  
-                p.requires_grad = False
-            for p in CD.parameters():  
                 p.requires_grad = False
             for p in E.parameters():  
                 p.requires_grad = False
@@ -299,15 +296,9 @@ def test(exp_no:int, pretrained:bool, TOTAL_ITER:int=200000, viz=True):
 
 
             state = open(logfile, 'a')
-            if iteration % 1 != 0:
-                # state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t\t D: {loss2.item():<8.3} \t\t En_Ge: {loss1.item():<8.3} \t\t Code: {loss3.item():<8.3}\n')
-                # state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t\t D: {loss2.item():<8.3} \t\t En_Ge: {loss1.item():<8.3} \t\t Code: {loss3.item():<8.3}\n')
-                pass
-            else:
-                # state.write(f'[{iteration}/{TOTAL_ITER[1]}] \t\t D: {loss2.item():<8.3} \t\t En_Ge: {loss1.item():<8.3} \t\t Code: {loss3.item():<8.3} \t\t ssim( gen: {ssim_eval(x_hat,real_images)}, random: {ssim_eval(x_rand, real_images)} \t mmd( gen: {mmd_eval(x_hat,real_images)}, random: {mmd_eval(x_rand, real_images)}))\n') 
-                ssim_scrore =  ssim_eval(x_hat,real_images)
-                ssim_avgs+=ssim_scrore
-                state.write(f'[{iteration+cheqpiter}/{TOTAL_ITER[1]}] \t\t ssim( gen: {ssim_scrore:<8.5} \t mmd( gen: {mmd_eval(x_hat,real_images)}))\n')     # , random: {ssim_eval(x_rand, real_images):<8.5     # , random: {mmd_eval(x_rand, real_images)}
+            ssim_scrore =  ssim_eval(x_hat,real_images)
+            ssim_avgs+=ssim_scrore
+            state.write(f'[{iteration+cheqpiter}/{TOTAL_ITER[1]}] \t\t ssim( gen: {ssim_scrore:<8.5} \t mmd( gen: {mmd_eval(x_hat,real_images)}))\n')     # , random: {ssim_eval(x_rand, real_images):<8.5     # , random: {mmd_eval(x_rand, real_images)}
             state.close()
 
             if iteration % 5 == 0 and viz:
@@ -398,31 +389,24 @@ def load_models(exp_no, cheqpiter, CD_iter):
     # D.load_state_dict(torch.load(f'./checkpoint{exp_no}/D_iter{cheqpiter}es.pth'))
     E.load_state_dict(torch.load(f'./checkpoint{exp_no}/E_iter{cheqpiter}es.pth'))
     # A.load_state_dict(torch.load(f'./checkpoint{exp_no}/A_iter{cheqpiter}es.pth'))
-    if CD_iter:
-        CD.load_state_dict(torch.load(f'./checkpoint{exp_no}/CD_iter{cheqpiter}es.pth'))
-
+    
 
 G = Generator(noise = latent_dim)
-CD = Code_Discriminator(code_size = latent_dim ,num_units = 4096)
-# D = Discriminator(is_dis=True)
 D = PatchGANdiscriminator()
 E = Discriminator(out_class = latent_dim,is_dis=False)
 # A = MultiHeadAttention()
-A = AttentionM()
+# A = AttentionM()
 
 load_models(exp_no, cheqpiter, cd_iter)
 
 G.to(device)
 D.to(device)
-CD.to(device)
 E.to(device)
-A.to(device)
+# A.to(device)
 
 g_optimizer = optim.Adam(G.parameters(), glr)
 d_optimizer = optim.Adam(D.parameters(), dlr)
 e_optimizer = optim.Adam(E.parameters(), elr)
-cd_optimizer = optim.Adam(CD.parameters(), cdlr)  
-a_optimizer = optim.Adam(A.parameters(), elr)
 
 
 criterion_bce = nn.BCELoss()
@@ -430,7 +414,7 @@ criterion_l1 = nn.L1Loss()
 criterion_mse = nn.MSELoss()
 
     
-test_files = pd.read_csv('/home/guest1/3dmri/3dbraingen/test_AOMIC.csv', header=None)
+test_files = pd.read_csv('/home/guest1/data/3drepr/test_AOMIC.csv', header=None)
 testset = BrainDataset(test_files)
 train_loader = DataLoader(testset, BATCH_SIZE, shuffle=True)
 gen_load = inf_train_gen(train_loader)

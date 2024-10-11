@@ -78,27 +78,17 @@ class MultiHeadAttention(nn.Module):
         q = q.view(b, t, h, s)
         ky = ky.view(b, t, h, s)
         v = v.view(b, t, h, s)
-        # print('q', q.shape)
-        # print('k', ky.shape)
-        # print('v', v.shape)
+        
         q = rearrange(q, "b t h s -> (b h) t s", t=1)
         ky = rearrange(ky, "b t h s -> (b h) t s", t=1)
         v = rearrange(v, "b t h s -> (b h) t s", t=1)
-        # print('post_rearrangement')
-        # print('q', q.shape)
-        # print('k', ky.shape)
-        # print('v', v.shape)
+        
         w_hat = torch.bmm(q, ky.transpose(1,2))/(k**.5)
-        # print('w_hat', w_hat.shape)
         w = torch.softmax(w_hat, dim=-1)
-        # print('w', w.shape)
-        # print("v", v.shape)
-        # out = torch.matmul(w, v.transpose(1,2)).view(b,h,1,s)
+        
         out = torch.bmm(w, v)
-        # print('out', out.shape)
         out = rearrange(out, "(b h) t s -> b (h t s)", h=self.heads)
         out = self.unify_heads(out)
-        # print('out', out.shape)
         return out
 
 
@@ -119,15 +109,7 @@ class AttentionM(nn.Module):
         q = self.W_q(x)
         ky = self.W_k(x)
         v = self.W_v(x)
-        # q = q.view(b, t, h, s)
-        # ky = ky.view(b, t, h, s)
-        # v = v.view(b, t, h, s)
-        # print('q', q.shape)
-        # print('k', ky.shape)
-        # print('v', v.shape)
-        # q = rearrange(q, "b t h s -> (b h) t s", t=1)
-        # ky = rearrange(ky, "b t h s -> (b h) t s", t=1)
-        # v = rearrange(v, "b t h s -> (b h) t s", t=1)
+        
         out, wts = self.MhAtt(q, ky, v)
         return out
 
