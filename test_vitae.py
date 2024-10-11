@@ -92,7 +92,7 @@ def main(args):
     args = bootstrap(args=args, key='K_FOLD')
     train_transforms = tio.Compose(transforms)
 
-    Test_files = pd.read_csv('/home/guest1/3dmri/3dbraingen/test_AOMIC.csv', header=None)
+    Test_files = pd.read_csv('/home/guest1/data/3drepr/test_AOMIC.csv', header=None)
     testset = BrainDataset(Test_files, device=device)
 
     data_loader_test = torch.utils.data.DataLoader(

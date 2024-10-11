@@ -110,8 +110,8 @@ def main(args):
     split_index_path = os.path.join(PROJECT_ROOT_DIR, "brats", 'k_fold', 'indices_file')
     os.makedirs(split_index_path, exist_ok=True)
 
-    Train_files = pd.read_csv('/home/guest1/3dmri/3dbraingen/train_ADMIC.csv', header=None)
-    # Test_files = pd.read_csv('/home/guest1/3dmri/3dbraingen/test_ADNI.csv', header=None)
+    Train_files = pd.read_csv('/home/guest1/data/3drepr/train_ADMIC.csv', header=None)
+    # Test_files = pd.read_csv('/home/guest1/data/3drepr/test_ADNI.csv', header=None)
     trainset = BrainDataset(Train_files, transform=train_transforms, device=device)
     # testset = BrainDataset(Test_files, device=device)
     # Needed for the pre-training phase

@@ -139,7 +139,7 @@ pca = PCA(n_components=.95)
 def get_xy(df):
     x_lis, y_lis = [], []
     for i in range(len(df)):
-        x, y = np.load(os.path.abspath(df.iloc[i, 0]).replace('/media/neurocomputinglab/DATA/3dbraingen/3dmri/', '/media/neurocomputinglab/DATA1/3DMRI_/')).squeeze(), int(df.iloc[i, 2])
+        x, y = np.load(os.path.abspath(df.iloc[i, 0])).squeeze(), int(df.iloc[i, 2])
         # print(x, type(x), 'y', y, type(y))
         # break
         x_lis.append(x)

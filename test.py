@@ -94,7 +94,7 @@ class BrainDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, idx):
-        example_path, dataset_name = os.path.abspath(self.annotations.iloc[idx, 0]), self.annotations.iloc[idx,1]      #.replace('./3dmridata', '/home/guest1/3dmri/3dmridata')), "AOMIC"
+        example_path, dataset_name = os.path.abspath(self.annotations.iloc[idx, 0]), self.annotations.iloc[idx,1]
         # load example into numpy array using nibabel
         example = nib.load(example_path)
         if dataset_name=='AOMIC':
