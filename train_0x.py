@@ -237,7 +237,8 @@ def ssim_eval(img, gen):
 ###### TRAIN ######
 ###################
 
-def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000):
+def train(exp_no:int, pretrained:bool, noise_prob:float, TOTAL_ITER:int=200000): 
+    # Although TOTAL_ITER is set to be 200000, we stop the training very prior to that (as soon as we find that training is converging ~ 6000-8000)
     checkpoint_dir = f'./checkpoint{exp_no}'
     logfile = f'{checkpoint_dir}/log{exp_no}.txt'
     if not pretrained:
@@ -421,12 +422,7 @@ device = 'cuda:0' if torch.cuda.is_available else 'cpu'
  
 BATCH_SIZE=8
 latent_dim = 1000   #setting latent variable sizes
-gpu = True
-workers = 4
-LAMBDA= 10
 _eps = 1e-15
-Use_BRATS=False
-Use_ATLAS = False
 
 print("Selected device:", device, 'with batch_size:', BATCH_SIZE)   # , 'for exp_no', exp_no
 
@@ -434,11 +430,10 @@ print("Selected device:", device, 'with batch_size:', BATCH_SIZE)   # , 'for exp
 glr = 1e-4
 dlr = 1e-4
 elr = 1e-4
-cdlr = 1e-4
 g_iter = 2
 d_iter = 1
 pretrained = False
-load_pretrained = True
+load_pretrained = False
 cheqpiter = 4000 if load_pretrained else None  # please define this as required
 
 
