@@ -429,9 +429,11 @@ print("Selected device:", device, 'with batch_size:', BATCH_SIZE)   # , 'for exp
 ## define DISCRIMINATOR IN THE init_model()
 glr = 1e-4
 dlr = 1e-4
+cdlr = 1e-4
 elr = 1e-4
 g_iter = 2
 d_iter = 1
+cd_iter = 0
 pretrained = False
 load_pretrained = False
 cheqpiter = 4000 if load_pretrained else None  # please define this as required

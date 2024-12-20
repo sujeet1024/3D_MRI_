@@ -268,8 +268,8 @@ def test(exp_no:int, pretrained:bool, TOTAL_ITER:int=200000, viz=True):
                 p.requires_grad = False
             for p in G.parameters():  
                 p.requires_grad = False
-            for p in A.parameters():  
-                p.requires_grad = False
+            # for p in A.parameters():  
+            #     p.requires_grad = False
             
             ###############################################
             # Visualization
